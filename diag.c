@@ -34,7 +34,7 @@ int main(int argc,char **argv)
   Mat            A;               /* operator matrix */
   EPS            eps;             /* eigenproblem solver context */
   EPSType        type;
-  PetscInt       N,n=8,m,Istart,Iend,II,nev,i,j;
+  PetscInt       N,n=8,m,Istart,Iend,nev,i,j;
   PetscBool      flag;
   PetscErrorCode ierr;
 
@@ -60,9 +60,9 @@ int main(int argc,char **argv)
   const int dim=8; 
   double M[dim][dim];
   Hamiltonian(dim, M);
-  for (PetscInt ii=0; ii<8; ii++){
-    for (PetscInt jj=0; jj<8; jj++){
-        ierr = MatSetValue(A, ii, jj, M[ii][jj], INSERT_VALUES);CHKERRQ(ierr);
+  for (i=0; i<8; i++){
+    for (j=0; j<8; j++){
+        ierr = MatSetValue(A, i, j, M[i][j], INSERT_VALUES);CHKERRQ(ierr);
     }
   }
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
