@@ -54,7 +54,7 @@ int set_qRem(int qRem[], int q[], int imode, int nmodes){
 int main(){
     
     int nmodes = 3;
-    int q[7] = {2, 3,3, 2,2, 1,1};// quantum numbers
+    int q[7] = {2, 3,3, 2,2, 2,2};// quantum numbers
     int nRem = (nmodes - 1)*2;
     int iv, imode;
     
@@ -63,7 +63,8 @@ int main(){
     RemProd = (int *)malloc(sizeof(int)*nRem);
     FullProd = (int *)malloc(sizeof(int)*nmodes*2);
     qRem = (int *)malloc(sizeof(int)*nRem);
-
+    
+    int prod;
     for (imode=0; imode<nmodes; imode++){
         zeros(MODE, 2);
         for (iv=0; iv<q[1+imode*2]*q[1+imode*2]; iv++){
@@ -74,14 +75,23 @@ int main(){
             zeros(FullProd, nmodes*2);
             set_qRem(qRem, q, imode, nmodes);
             print_1d(qRem, nRem);
-            for(int j=0; j<get_prod(qRem, nRem); j++){
+            prod = get_prod(qRem, nRem);
+            printf("%d\n", prod);
+            for(int j=0; j<prod; j++){
                 // Place current MODE at proper position                
-                FullProd[2*imode] = MODE[0];
-                FullProd[2*imode+1] = MODE[1];
-
                 // Place remaining modes
+                int irem=0;
+                for (int ifull=0; ifull<nmodes; ifull++){
+                    if (ifull == imode){
+                        FullProd[2*imode] = MODE[0];
+                        FullProd[2*imode+1] = MODE[1];}
+                    else{
+                        FullProd[2*ifull] = RemProd[2*irem];
+                        FullProd[2*ifull+1] = RemProd[2*irem+1];
+                        irem++;}
+                }
                 
-                //print_1d(FullProd, nmodes*2);
+                print_1d(FullProd, nmodes*2);
                 increase(RemProd, qRem, nRem);
             }
 
