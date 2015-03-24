@@ -1,6 +1,6 @@
 CFLAGS=-std=c99
 
-default: diag
+default: main
 
 include ${SLEPC_DIR}/conf/slepc_common
 

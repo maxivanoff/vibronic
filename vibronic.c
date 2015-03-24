@@ -48,8 +48,8 @@ int Hamiltonian(int d, double M[][d]) {
         VALUES[Vsize] = VDiag(v, w, E, nmodes);
         I[Vsize] = Ij;
         J[Vsize] = I[Vsize];
+        printf("i=%d j=%d V=%f", Ij, Ij, VALUES[Vsize]);
         Vsize++;
-
         // coupling
         for (int j=0; j<size_q; j++) v2[j] = v[j];
         v2[0] = 1 - v[0];
