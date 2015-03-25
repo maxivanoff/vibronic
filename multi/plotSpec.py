@@ -17,5 +17,6 @@ plt.vlines(v[:,0], [0], v[:,2], color='red', lw=2, label='+')
 plt.vlines(v[:,0], [0], v[:,1], color='blue', lw=2, label='-')
 #plt.legend(loc='upper right')
 plt.xlim([-10, np.amax(v[:,0])+10])
+plt.xlim([-10, 100])
 plt.show()
 
