@@ -8,15 +8,15 @@
 int main(){
     
     int nmodes = 2;
-    int q[5] = {2, 2,2, 2,2};// quantum numbers
-    double w[4] = {10, 10, 20, 20};//frequencies
-    double b[4] = {1, 1, 0.5, 0.5};//shifts
-    double E[2] = {0,0};
+    int size_q = 5;
+    int q[] = {2, 2,2, 2,2};// quantum numbers
+    double w[] = {10, 10, 20,20};//frequencies
+    double b[] = {1, 1, 0.5, 0.5};//shifts
+    double E[] = {0,0};
     double Vab = 99;
     
    
     // Memory for sparse Hamiltonian matrix 
-    int size_q = sizeof(q)/sizeof(int);   
     int *I, *J;
     double *VALUES;
     int numStates = get_prod(q, size_q); 
@@ -27,7 +27,8 @@ int main(){
     VALUES = (double *)malloc(sizeof(double)*numElems);
     
     // Compute Hamiltonian
-    SparseHamiltonian(nmodes, q, w, b, E, Vab, I, J, VALUES, numStates);
+    int elems;
+    elems = SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates);
     
     // Expand to matrix
     double **M = (double **)malloc(sizeof(double *)*numStates);
@@ -42,7 +43,7 @@ int main(){
     
     // print matrix
     for(int i=0; i < numStates; i++) {
-          for(int j=0; j < numStates; j++) printf("%10f ",M[i][j]);
+          for(int j=0; j < numStates; j++) printf("%3f ",M[i][j]);
           printf("\n");
     }
 
