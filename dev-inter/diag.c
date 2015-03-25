@@ -5,6 +5,13 @@
 
 #undef __FUNCT__
 #define __FUNCT__ "main"
+
+struct modelParams{
+    int nmodes;
+    int size_q;
+    double w[10];
+}
+
 int main(int argc,char **argv)
 {
   SlepcInitialize(&argc,&argv,(char*)0,NULL);

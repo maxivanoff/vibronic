@@ -44,16 +44,26 @@ int pack_to_index(int v[], int q_base[], int size_q) {
     return result;
 }
 
-double EDiag(int state[], double w[], double E[], int nmodes){
+double EIntra(int state[], double w[], double E[], int nIntra){
     double En = E[state[0]];
-    for (int i=0; i<nmodes;i++){
+    int i;
+    for (i=0; i<nIntra;i++){
         En += w[2*i]*(state[1 + 2*i] + 0.5) + w[2*i+1]*(state[2*i + 2] + 0.5);
     }
     return En;
 }
 
+double EInter(int state[], double w1[], double E[],  int nInter){
+    double En = E[state[0]];
+    int i;
+    for (i=0; i<nInter; i++){
+        En += w[i]*(state[1 + 2*nIntra + i] + 0.5); 
+    }
+    return En;
+}
 
-int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], double E[], double Vab, int I[], int J[], double VALUES[], int numStates){
+
+int SparseHamiltonian(int nIntra, int q[], int size_q, double w[], double b[], double E[], double Vab, int I[], int J[], double VALUES[], int numStates){
     
     int *q_base;
     q_base = (int *)malloc(sizeof(int)*size_q);
@@ -68,29 +78,28 @@ int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], d
     int Ij;
     int pos;
     int elems=0; // at the loop end contains number of nonzero elements
+
+    //inter modes variables
+    int nInter = 2;
+    double l1[2] = [1, 1];
+    double l2[2] = [1, 1];
+    double w1[2] = [1, 1];
+    double w2[2] = [1, 1];
+
     for (int istate=0; istate<numStates; istate++){
         Ij = pack_to_index(state, q_base, size_q);
         
-        // diagonal
-        VALUES[elems] = EDiag(state, w, E, nmodes);
+        // diagonal block - diagonal
+        VALUES[elems] = EIntra(state, w, E, nIntra) + EInter(state, w1, E, nInter);
         I[elems] = Ij;
         J[elems] = Ij;
         elems++;
         
-        // coupling
-        for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
-        stateCopy[0] = 1 - state[0];
-        VALUES[elems] = Vab;
-        I[elems] = Ij;
-        J[elems] = pack_to_index(stateCopy, q_base, size_q);
-        elems++;
-        
-        // n' = n - 1
-        for (int imode=0; imode<nmodes; imode++){
+        // diagonal block - subdiagonal INTRA
+        for (int imode=0; imode<nIntra; imode++){
             pos = 1 + state[0] + 2*imode;
             for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
-            if (stateCopy[pos]-- > 0) {
-
+            if (stateCopy[pos]-- > 0) { // n' = n - 1
                 VALUES[elems] = b[pos-1] * w[pos-1] * sqrt(state[pos]);
                 I[elems] = Ij;
                 J[elems] = pack_to_index(stateCopy, q_base, size_q);
@@ -103,7 +112,53 @@ int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], d
                 elems++;
             }
         }
+        
+        // diagonal block - subdiagonal INTER
+        for (int imode=0; imode<nInter; imode++){
+            pos = 1 + 2*nIntra + imode;
+            for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
+            if (stateCopy[pos]-- > 0) { // n' = n - 1
+                VALUES[elems] = l1[imode] * w1[imode] * sqrt(state[pos]);
+                I[elems] = Ij;
+                J[elems] = pack_to_index(stateCopy, q_base, size_q);
+                elems++;
 
+                // n' = n + 1 is implemented using symmetry
+                VALUES[elems] = VALUES[elems-1];
+                I[elems] = J[elems-1];
+                J[elems] = I[elems-1];
+                elems++;
+            }
+        }
+         
+        // coupling block - diagonal
+        VALUES[elems] = Vab;
+        for (int i=0; i<nInter; i++){
+            VALUES[elems] += w2[i]*(state[1 + 2*nIntra + i] + 0.5)
+        }
+        for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
+        stateCopy[0] = 1 - state[0];
+        I[elems] = Ij;
+        J[elems] = pack_to_index(stateCopy, q_base, size_q);
+        elems++;
+        // coupling block - subdiagonal INTER
+        for (int imode=0; imode<nInter; imode++){
+            for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
+            pos = 1 + 2*nIntra + imode;
+            if (stateCopy[pos]-- > 0){ // n' = n - 1
+                VALUES[elems] = l2[imode] * w2[imode] * sqrt(state[pos]);
+                I[elems] = Ij;
+                J[elems] = pack_to_index(stateCopy, q_base, size_q);
+                elems++;
+
+                // n' = n + 1 is implemented using symmetry
+                VALUES[elems] = VALUES[elems-1];
+                I[elems] = J[elems-1];
+                J[elems] = I[elems-1];
+                elems++;
+            }
+        }
+        
         increase(state, q, size_q);
 
     }
