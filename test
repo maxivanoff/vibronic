@@ -1,0 +1,13 @@
+Number of states: 8
+Sparse Hamiltonian computation time: 0 seconds 0 milliseconds
+Time to set up matrix: 0 seconds 0 milliseconds
+Diagonalization time: 0 seconds 0 milliseconds
+E    Isym    Iasym
+-81.360680 0.000000 1.047214
+-59.000000 0.000000 0.735271
+-59.000000 0.000000 0.064729
+-36.639320 0.000000 0.152786
+116.639320 1.047214 0.000000
+139.000000 0.768436 0.000000
+139.000000 0.031564 0.000000
+161.360680 0.152786 0.000000
