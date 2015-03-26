@@ -31,7 +31,7 @@ int main(int argc,char **argv)
   int elems;
   clock_t start = clock(), diff;
   int sec;
-  elems = SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates);
+  SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates, &elems);
   diff = clock() - start;
   sec = diff / CLOCKS_PER_SEC;
   printf("Sparse Hamiltonian computation time: %d seconds %d milliseconds\n", sec, sec/1000);

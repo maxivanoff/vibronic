@@ -44,14 +44,6 @@ int pack_to_index(int v[], int q_base[], int size_q) {
     return result;
 }
 
-double EDiag(int state[], double w[], double E[], int nmodes){
-    double En = E[state[0]];
-    for (int i=0; i<nmodes;i++){
-        En += w[2*i]*(state[1 + 2*i] + 0.5) + w[2*i+1]*(state[2*i + 2] + 0.5);
-    }
-    return En;
-}
-
 double Energy(int state[], double w[], int start, int nmodes){
     double E=0;
     for (int i=0; i<nmodes; i++){
@@ -72,18 +64,17 @@ int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], 
             VALUES[*elems] = b[imode] * w[imode] * sqrt(state[pos]);
             I[*elems] = Ij;
             J[*elems] = pack_to_index(stateCopy, q_base, size_q);
-            *elems++;
+            ++*elems;
 
             // n' = n + 1 is implemented using symmetry
             VALUES[*elems] = VALUES[*elems-1];
             I[*elems] = J[*elems-1];
             J[*elems] = I[*elems-1];
-            *elems++;
+            ++*elems;
         }
     }
     return 0;
 }
-//int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], double E[], double Vab, int I[], int J[], double VALUES[], int numStates){
 int SparseHamiltonian( int *nmodes, int *q, int size_q, double *w, double *b, double *E, double Vab, int *I, int *J, double *VALUES, int numStates, int *elems){
     
     int *q_base;
@@ -105,7 +96,7 @@ int SparseHamiltonian( int *nmodes, int *q, int size_q, double *w, double *b, do
         VALUES[*elems] = E[*state] + Energy(state, w, 1, nmodes[0]+nmodes[1]);
         I[*elems] = Ij;
         J[*elems] = Ij;
-        *elems++;
+        ++*elems;
         
         // coupling
         for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
@@ -113,7 +104,7 @@ int SparseHamiltonian( int *nmodes, int *q, int size_q, double *w, double *b, do
         VALUES[*elems] = Vab;
         I[*elems] = Ij;
         J[*elems] = pack_to_index(stateCopy, q_base, size_q);
-        *elems++;
+        ++*elems;
         
         // subdiagonal
         start = 1;
