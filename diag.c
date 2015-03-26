@@ -8,17 +8,6 @@
 int main(int argc,char **argv)
 {
   SlepcInitialize(&argc,&argv,(char*)0,NULL);
-<<<<<<< HEAD
-
-  int nmodes = 2;
-  int size_q = 5;
-    
-  int q[] = {2, 2,2, 1,1};// quantum numbers
-  double w[] = {10, 10, 20, 20};//frequencies
-  double b[] = {1, 1, 0.5, 0.5};//shifts
-  double E[] = {0,0};
-  double Vab = 99;
-=======
     int nmodes[] = {3,3};
     int size_q = 7;
     double Vab = 20;
@@ -26,7 +15,6 @@ int main(int argc,char **argv)
     double w[] = {10, 20, 30, 10, 20, 30};//frequencies
     double b[] = {1, 0.5, 0.3, 1, 0.5, 0.3};//shifts
     double E[] = {0,0};
->>>>>>> split_unit
   double Msym = 1, Masym = 1;
 
   // Memory for sparse Hamiltonian matrix 
