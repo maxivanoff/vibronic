@@ -59,8 +59,10 @@ double Energy(int state[], double w[], int start, int nmodes){
     }
     return E;
 }
-int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], int J[], double VALUES[], int elems, int size_q){
+int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], int J[], double VALUES[], int elems, int size_q, int Ij, int q_base[]){
     int pos;
+    int *stateCopy;
+    stateCopy = (int *)malloc(sizeof(int)*size_q);
     for (int imode=0; imode<nmodes; imode++){
         pos = start + imode;
         for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
@@ -79,47 +81,62 @@ int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], 
             elems++;
         }
     }
-    return 0;
+    return elems;
 }
+struct data{
+    int nmodesA;
+    int nmodesB;
+    int size_q;
+    int q[5];// quantum numbers
+    double wA[2];//frequencies
+    double wB[2];//frequencies
+    double bA[2];//shifts
+    double bB[2];//shifts
+    double E[2];
+    double Vab;
+};
+
 
 //int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], double E[], double Vab, int I[], int J[], double VALUES[], int numStates){
-int SparseHamiltonian( struct data* params, int I[], int J[], double VALUES[], int numStates){
+int SparseHamiltonian( struct data *params, int I[], int J[], double VALUES[], int numStates){
     
     int *q_base;
-    q_base = (int *)malloc(sizeof(int)*size_q);
-    get_q_base(q_base, q, size_q);
+    q_base = (int *)malloc(sizeof(int)*params->size_q);
+    get_q_base(q_base, params->q, params->size_q);
     
     // Initialize first state
-    int *state, *stateCopy;
-    state = (int *)malloc(sizeof(int)*size_q);
-    stateCopy = (int *)malloc(sizeof(int)*size_q);
-    for(int i=0; i<size_q; i++) state[i]=0;
+    int *state;
+    state = (int *)malloc(sizeof(int)*params->size_q);
+    for(int i=0; i<params->size_q; i++) state[i]=0;
+    int *stateCopy;
+    stateCopy = (int *)malloc(sizeof(int)*params->size_q);
 
     int Ij;
-    int pos;
     int elems=0; // at the loop end contains number of nonzero elements
+    int startA = 1;
+    int startB = 1 + params->nmodesA;
     for (int istate=0; istate<numStates; istate++){
-        Ij = pack_to_index(state, q_base, size_q);
+        Ij = pack_to_index(state, q_base, params->size_q);
         
         // diagonal
-        VALUES[elems] = E[state[0]] + Energy(state, wA, 1, nmodesA) + Energy(state, wB, 1+nmodesA, nmodesB);
+        VALUES[elems] = params->E[state[0]] + Energy(state, params->wA, startA, params->nmodesA) + Energy(state, params->wB, startB, params->nmodesB);
         I[elems] = Ij;
         J[elems] = Ij;
         elems++;
         
         // coupling
-        for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
+        for (int j=0; j<params->size_q; j++) stateCopy[j] = state[j];
         stateCopy[0] = 1 - state[0];
-        VALUES[elems] = Vab;
+        VALUES[elems] = params->Vab;
         I[elems] = Ij;
-        J[elems] = pack_to_index(stateCopy, q_base, size_q);
+        J[elems] = pack_to_index(stateCopy, q_base, params->size_q);
         elems++;
         
         // subdiagonal
-        ladder(state, wA, bA, 1, nmodesA, I, J, VALUES, elems, size_q)
-        ladder(state, wB, bB, 1 + nmodesA, nmodesB, I, J, VALUES, elems, size_q)
+        elems = ladder(state, params->wA, params->bA, startA, params->nmodesA, I, J, VALUES, elems, params->size_q, Ij, q_base);
+        elems = ladder(state, params->wB, params->bB, startB, params->nmodesB, I, J, VALUES, elems, params->size_q, Ij, q_base);
 
-        increase(state, q, size_q);
+        increase(state, params->q, params->size_q);
 
     }
     free(q_base);

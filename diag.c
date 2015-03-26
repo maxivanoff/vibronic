@@ -8,7 +8,24 @@
 int main(int argc,char **argv)
 {
   SlepcInitialize(&argc,&argv,(char*)0,NULL);
-
+    struct data params;
+    params.nmodesA = 2;
+    params.nmodesB = 2;
+    params.size_q = 5;
+    params.Vab = 99;
+    int q[5] = {2, 2,1, 2,1};// quantum numbers
+    double wA[2] = {10, 20};//frequencies
+    double wB[2] = {10, 20};//frequencies
+    double bA[2] = {1, 0.5};//shifts
+    double bB[2] = {1, 0.5};//shifts
+    double E[2] = {0,0};
+    memcpy(params.q, q, sizeof params.q);
+    memcpy(params.wA, wA, sizeof params.wA);
+    memcpy(params.wB, wB, sizeof params.wB);
+    memcpy(params.bA, bA, sizeof params.bA);
+    memcpy(params.bB, bB, sizeof params.bB);
+    memcpy(params.E, E, sizeof params.E);
+/* 
   int nmodes = 3;
   int size_q = 7;
     
@@ -16,15 +33,15 @@ int main(int argc,char **argv)
   double w[] = {10, 10, 20, 20, 30, 30};//frequencies
   double b[] = {1, 1, 0.5, 0.5, 0.3, 0.3};//shifts
   double E[] = {0,0};
-  double Vab = 20;
+  double Vab = 20;*/
   double Msym = 1, Masym = 1;
 
   // Memory for sparse Hamiltonian matrix 
   int *I, *J;
   double *VALUES;
-  int numStates = get_prod(q, size_q); 
+  int numStates = get_prod(params.q, params.size_q); 
   printf("Number of states: %d\n", numStates);
-  int numElems = 2*numStates + numStates*nmodes*2;
+  int numElems = 2*numStates + params.nmodesA*2*numStates;
   I = (int *)malloc(sizeof(int)*numElems);
   J = (int *)malloc(sizeof(int)*numElems);
   VALUES = (double *)malloc(sizeof(double)*numElems);
@@ -33,7 +50,8 @@ int main(int argc,char **argv)
   int elems;
   clock_t start = clock(), diff;
   int sec;
-  elems = SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates);
+  elems = SparseHamiltonian(&params, I, J, VALUES, numStates);
+  //elems = SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates);
   diff = clock() - start;
   sec = diff / CLOCKS_PER_SEC;
   printf("Sparse Hamiltonian computation time: %d seconds %d milliseconds\n", sec, sec/1000);
