@@ -4,17 +4,16 @@
 #include <stdio.h>
 #include <string.h>
 
-
 int main(){
-    
-    int nmodes = 2;
+   
+    int nmodes[] = {2,2};
     int size_q = 5;
-    int q[] = {2, 2,2, 2,2};// quantum numbers
-    double w[] = {10, 10, 20,20};//frequencies
-    double b[] = {1, 1, 0.5, 0.5};//shifts
-    double E[] = {0,0};
     double Vab = 99;
-    
+    int q[5] = {2, 2,1, 2,1};// quantum numbers
+    double w[] = {10, 20, 10, 20};//frequencies
+    double b[] = {1, 0.5, 1, 0.5};//shifts
+    double E[2] = {0,0};
+   
    
     // Memory for sparse Hamiltonian matrix 
     int *I, *J;
@@ -28,7 +27,7 @@ int main(){
     
     // Compute Hamiltonian
     int elems;
-    elems = SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates);
+    SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates, &elems);
     
     // Expand to matrix
     double **M = (double **)malloc(sizeof(double *)*numStates);

@@ -44,73 +44,78 @@ int pack_to_index(int v[], int q_base[], int size_q) {
     return result;
 }
 
-double EDiag(int state[], double w[], double E[], int nmodes){
-    double En = E[state[0]];
-    for (int i=0; i<nmodes;i++){
-        En += w[2*i]*(state[1 + 2*i] + 0.5) + w[2*i+1]*(state[2*i + 2] + 0.5);
+double Energy(int state[], double w[], int start, int nmodes){
+    double E=0;
+    for (int i=0; i<nmodes; i++){
+        E += w[i]*(state[start + i] + 0.5);
     }
-    return En;
+    return E;
 }
+int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], int J[], double VALUES[], int size_q, int Ij, int q_base[], int *elems){
+    int pos;
+    int *stateCopy;
+    stateCopy = (int *)malloc(sizeof(int)*size_q);
+    for (int imode=0; imode<nmodes; imode++){
+        pos = start + imode;
+        for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
+        if (stateCopy[pos]-- > 0) {
 
+            // n' = n - 1
+            VALUES[*elems] = b[imode] * w[imode] * sqrt(state[pos]);
+            I[*elems] = Ij;
+            J[*elems] = pack_to_index(stateCopy, q_base, size_q);
+            ++*elems;
 
-int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], double E[], double Vab, int I[], int J[], double VALUES[], int numStates){
+            // n' = n + 1 is implemented using symmetry
+            VALUES[*elems] = VALUES[*elems-1];
+            I[*elems] = J[*elems-1];
+            J[*elems] = I[*elems-1];
+            ++*elems;
+        }
+    }
+    return 0;
+}
+int SparseHamiltonian( int *nmodes, int *q, int size_q, double *w, double *b, double *E, double Vab, int *I, int *J, double *VALUES, int numStates, int *elems){
     
     int *q_base;
     q_base = (int *)malloc(sizeof(int)*size_q);
     get_q_base(q_base, q, size_q);
     
     // Initialize first state
-    int *state, *stateCopy;
+    int *state;
     state = (int *)malloc(sizeof(int)*size_q);
-    stateCopy = (int *)malloc(sizeof(int)*size_q);
     for(int i=0; i<size_q; i++) state[i]=0;
+    int *stateCopy;
+    stateCopy = (int *)malloc(sizeof(int)*size_q);
 
     int Ij;
-    int pos;
-    int elems=0; // at the loop end contains number of nonzero elements
+    int start;
     for (int istate=0; istate<numStates; istate++){
         Ij = pack_to_index(state, q_base, size_q);
-        
         // diagonal
-        VALUES[elems] = EDiag(state, w, E, nmodes);
-        I[elems] = Ij;
-        J[elems] = Ij;
-        elems++;
+        VALUES[*elems] = E[*state] + Energy(state, w, 1, nmodes[0]+nmodes[1]);
+        I[*elems] = Ij;
+        J[*elems] = Ij;
+        ++*elems;
         
         // coupling
         for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
-        stateCopy[0] = 1 - state[0];
-        VALUES[elems] = Vab;
-        I[elems] = Ij;
-        J[elems] = pack_to_index(stateCopy, q_base, size_q);
-        elems++;
+        stateCopy[0] = 1 - *state;
+        VALUES[*elems] = Vab;
+        I[*elems] = Ij;
+        J[*elems] = pack_to_index(stateCopy, q_base, size_q);
+        ++*elems;
         
-        // n' = n - 1
-        for (int imode=0; imode<nmodes; imode++){
-            pos = 1 + state[0] + 2*imode;
-            for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
-            if (stateCopy[pos]-- > 0) {
-
-                VALUES[elems] = b[pos-1] * w[pos-1] * sqrt(state[pos]);
-                I[elems] = Ij;
-                J[elems] = pack_to_index(stateCopy, q_base, size_q);
-                elems++;
-
-                // n' = n + 1 is implemented using symmetry
-                VALUES[elems] = VALUES[elems-1];
-                I[elems] = J[elems-1];
-                J[elems] = I[elems-1];
-                elems++;
-            }
-        }
+        // subdiagonal
+        start = 1;
+        for (int i=0; i < *state; i++) start += nmodes[i];
+        ladder(state, w, b, start, nmodes[*state], I, J, VALUES, size_q, Ij, q_base, elems);
 
         increase(state, q, size_q);
 
     }
-
-   
     free(q_base);
     free(stateCopy);
     free(state);
-    return elems;
+    return 0;
 } 
