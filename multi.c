@@ -59,7 +59,7 @@ double Energy(int state[], double w[], int start, int nmodes){
     }
     return E;
 }
-int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], int J[], double VALUES[], int elems, int size_q, int Ij, int q_base[]){
+int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], int J[], double VALUES[], int size_q, int Ij, int q_base[], int *elems){
     int pos;
     int *stateCopy;
     stateCopy = (int *)malloc(sizeof(int)*size_q);
@@ -69,78 +69,62 @@ int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], 
         if (stateCopy[pos]-- > 0) {
 
             // n' = n - 1
-            VALUES[elems] = b[imode] * w[imode] * sqrt(state[pos]);
-            I[elems] = Ij;
-            J[elems] = pack_to_index(stateCopy, q_base, size_q);
-            elems++;
+            VALUES[*elems] = b[imode] * w[imode] * sqrt(state[pos]);
+            I[*elems] = Ij;
+            J[*elems] = pack_to_index(stateCopy, q_base, size_q);
+            *elems++;
 
             // n' = n + 1 is implemented using symmetry
-            VALUES[elems] = VALUES[elems-1];
-            I[elems] = J[elems-1];
-            J[elems] = I[elems-1];
-            elems++;
+            VALUES[*elems] = VALUES[*elems-1];
+            I[*elems] = J[*elems-1];
+            J[*elems] = I[*elems-1];
+            *elems++;
         }
     }
-    return elems;
+    return 0;
 }
-struct data{
-    int nmodesA;
-    int nmodesB;
-    int size_q;
-    int q[5];// quantum numbers
-    double wA[2];//frequencies
-    double wB[2];//frequencies
-    double bA[2];//shifts
-    double bB[2];//shifts
-    double E[2];
-    double Vab;
-};
-
-
 //int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], double E[], double Vab, int I[], int J[], double VALUES[], int numStates){
-int SparseHamiltonian( struct data *params, int I[], int J[], double VALUES[], int numStates){
+int SparseHamiltonian( int *nmodes, int *q, int size_q, double *w, double *b, double *E, double Vab, int *I, int *J, double *VALUES, int numStates, int *elems){
     
     int *q_base;
-    q_base = (int *)malloc(sizeof(int)*params->size_q);
-    get_q_base(q_base, params->q, params->size_q);
+    q_base = (int *)malloc(sizeof(int)*size_q);
+    get_q_base(q_base, q, size_q);
     
     // Initialize first state
     int *state;
-    state = (int *)malloc(sizeof(int)*params->size_q);
-    for(int i=0; i<params->size_q; i++) state[i]=0;
+    state = (int *)malloc(sizeof(int)*size_q);
+    for(int i=0; i<size_q; i++) state[i]=0;
     int *stateCopy;
-    stateCopy = (int *)malloc(sizeof(int)*params->size_q);
+    stateCopy = (int *)malloc(sizeof(int)*size_q);
 
     int Ij;
-    int elems=0; // at the loop end contains number of nonzero elements
-    int startA = 1;
-    int startB = 1 + params->nmodesA;
+    int start;
     for (int istate=0; istate<numStates; istate++){
-        Ij = pack_to_index(state, q_base, params->size_q);
-        
+        Ij = pack_to_index(state, q_base, size_q);
         // diagonal
-        VALUES[elems] = params->E[state[0]] + Energy(state, params->wA, startA, params->nmodesA) + Energy(state, params->wB, startB, params->nmodesB);
-        I[elems] = Ij;
-        J[elems] = Ij;
-        elems++;
+        VALUES[*elems] = E[*state] + Energy(state, w, 1, nmodes[0]+nmodes[1]);
+        I[*elems] = Ij;
+        J[*elems] = Ij;
+        *elems++;
         
         // coupling
-        for (int j=0; j<params->size_q; j++) stateCopy[j] = state[j];
-        stateCopy[0] = 1 - state[0];
-        VALUES[elems] = params->Vab;
-        I[elems] = Ij;
-        J[elems] = pack_to_index(stateCopy, q_base, params->size_q);
-        elems++;
+        for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
+        stateCopy[0] = 1 - *state;
+        VALUES[*elems] = Vab;
+        I[*elems] = Ij;
+        J[*elems] = pack_to_index(stateCopy, q_base, size_q);
+        *elems++;
         
         // subdiagonal
-        elems = ladder(state, params->wA, params->bA, startA, params->nmodesA, I, J, VALUES, elems, params->size_q, Ij, q_base);
-        elems = ladder(state, params->wB, params->bB, startB, params->nmodesB, I, J, VALUES, elems, params->size_q, Ij, q_base);
+        start = 1;
+        for (int i=0; i < *state; i++) start += nmodes[i];
+        ladder(state, w, b, start, nmodes[*state], I, J, VALUES, size_q, Ij, q_base, elems);
 
-        increase(state, params->q, params->size_q);
+        increase(state, q, size_q);
 
     }
     free(q_base);
     free(stateCopy);
     free(state);
-    return elems;
+    return 0;
 } 

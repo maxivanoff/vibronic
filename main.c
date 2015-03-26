@@ -6,29 +6,19 @@
 
 int main(){
    
-    struct data params;
-    params.nmodesA = 2;
-    params.nmodesB = 2;
-    params.size_q = 5;
-    params.Vab = 99;
+    int nmodes[] = {2,2};
+    int size_q = 5;
+    double Vab = 99;
     int q[5] = {2, 2,1, 2,1};// quantum numbers
-    double wA[2] = {10, 20};//frequencies
-    double wB[2] = {10, 20};//frequencies
-    double bA[2] = {1, 0.5};//shifts
-    double bB[2] = {1, 0.5};//shifts
+    double w[] = {10, 20, 10, 20};//frequencies
+    double b[] = {1, 0.5, 1, 0.5};//shifts
     double E[2] = {0,0};
-    memcpy(params.q, q, sizeof params.q);
-    memcpy(params.wA, wA, sizeof params.wA);
-    memcpy(params.wB, wB, sizeof params.wB);
-    memcpy(params.bA, bA, sizeof params.bA);
-    memcpy(params.bB, bB, sizeof params.bB);
-    memcpy(params.E, E, sizeof params.E);
-    
+   
    
     // Memory for sparse Hamiltonian matrix 
     int *I, *J;
     double *VALUES;
-    int numStates = get_prod(params.q, params.size_q); 
+    int numStates = get_prod(q, size_q); 
     printf("Number of states: %d\n", numStates);
     int numElems = numStates*4;
     I = (int *)malloc(sizeof(int)*numElems);
@@ -37,8 +27,7 @@ int main(){
     
     // Compute Hamiltonian
     int elems;
-    elems = SparseHamiltonian(&params, I, J, VALUES, numStates);
-    //elems = SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates);
+    SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates, &elems);
     
     // Expand to matrix
     double **M = (double **)malloc(sizeof(double *)*numStates);

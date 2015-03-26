@@ -1,14 +1,11 @@
 #include <stdio.h>
 
 struct data{
-    int nmodesA;
-    int nmodesB;
+    int nmodes[2];
     int size_q;
     int q[5];// quantum numbers
-    double wA[2];//frequencies
-    double wB[2];//frequencies
-    double bA[2];//shifts
-    double bB[2];//shifts
+    double w[4];//frequencies
+    double b[4];//shifts
     double E[2];
     double Vab;
 };
@@ -16,5 +13,5 @@ struct data{
 
 extern int get_prod(int q[], int size_q);
 
-extern int SparseHamiltonian( struct data *params, int I[], int J[], double VALUES[], int numStates);
+extern int SparseHamiltonian( int *nmodes, int *q, int size_q, double *w, double *b, double *E, double Vab, int *I, int *J, double *VALUES, int numStates);
 
