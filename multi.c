@@ -52,8 +52,38 @@ double EDiag(int state[], double w[], double E[], int nmodes){
     return En;
 }
 
+double Energy(int state[], double w[], int start, int nmodes){
+    double E=0;
+    for (int i=0; i<nmodes; i++){
+        E += w[i]*(state[start + i] + 0.5);
+    }
+    return E;
+}
+int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], int J[], double VALUES[], int elems, int size_q){
+    int pos;
+    for (int imode=0; imode<nmodes; imode++){
+        pos = start + imode;
+        for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
+        if (stateCopy[pos]-- > 0) {
 
-int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], double E[], double Vab, int I[], int J[], double VALUES[], int numStates){
+            // n' = n - 1
+            VALUES[elems] = b[imode] * w[imode] * sqrt(state[pos]);
+            I[elems] = Ij;
+            J[elems] = pack_to_index(stateCopy, q_base, size_q);
+            elems++;
+
+            // n' = n + 1 is implemented using symmetry
+            VALUES[elems] = VALUES[elems-1];
+            I[elems] = J[elems-1];
+            J[elems] = I[elems-1];
+            elems++;
+        }
+    }
+    return 0;
+}
+
+//int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], double E[], double Vab, int I[], int J[], double VALUES[], int numStates){
+int SparseHamiltonian( struct data* params, int I[], int J[], double VALUES[], int numStates){
     
     int *q_base;
     q_base = (int *)malloc(sizeof(int)*size_q);
@@ -72,7 +102,7 @@ int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], d
         Ij = pack_to_index(state, q_base, size_q);
         
         // diagonal
-        VALUES[elems] = EDiag(state, w, E, nmodes);
+        VALUES[elems] = E[state[0]] + Energy(state, wA, 1, nmodesA) + Energy(state, wB, 1+nmodesA, nmodesB);
         I[elems] = Ij;
         J[elems] = Ij;
         elems++;
@@ -85,30 +115,13 @@ int SparseHamiltonian(int nmodes, int q[], int size_q, double w[], double b[], d
         J[elems] = pack_to_index(stateCopy, q_base, size_q);
         elems++;
         
-        // n' = n - 1
-        for (int imode=0; imode<nmodes; imode++){
-            pos = 1 + state[0] + 2*imode;
-            for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
-            if (stateCopy[pos]-- > 0) {
-
-                VALUES[elems] = b[pos-1] * w[pos-1] * sqrt(state[pos]);
-                I[elems] = Ij;
-                J[elems] = pack_to_index(stateCopy, q_base, size_q);
-                elems++;
-
-                // n' = n + 1 is implemented using symmetry
-                VALUES[elems] = VALUES[elems-1];
-                I[elems] = J[elems-1];
-                J[elems] = I[elems-1];
-                elems++;
-            }
-        }
+        // subdiagonal
+        ladder(state, wA, bA, 1, nmodesA, I, J, VALUES, elems, size_q)
+        ladder(state, wB, bB, 1 + nmodesA, nmodesB, I, J, VALUES, elems, size_q)
 
         increase(state, q, size_q);
 
     }
-
-   
     free(q_base);
     free(stateCopy);
     free(state);
