@@ -6,47 +6,33 @@
 
 int main(){
    
-    int nmodes[] = {2,2};
-    int size_q = 5;
-    double Vab = 99;
-    int q[5] = {2, 2,1, 2,1};// quantum numbers
-    double E[2] = {0,0};
+    int nIntra[] = {0,0};
     // intra modes
-    double w[] = {10, 20, 10, 20};//frequencies
-    double b[] = {1, 0.5, 1, 0.5};//shifts
+    double wIntra[] = {0, 0};//frequencies
+    double bIntra[] = {0, 0};//shifts
     // inter modes
-    int lmodes = 1;
-    double w_sym[] = {2};
-    double w_asym[] = {2};
-    double b_sym[] = {1};
-    double b_sym[] = {1};
+    int nInter = 1;
+    double wInter[] = {100,100}; // mode 1 sym asym; mode 2 sym asym ...
+    double bInter[] = {0.8,0.8};
 
-    double *w1, *w2, *b1, *b2;
-    w1 = (double *)malloc(sizeof(int)*lmodes);
-    w2 = (double *)malloc(sizeof(int)*lmodes);
-    b1 = (double *)malloc(sizeof(int)*lmodes);
-    b2 = (double *)malloc(sizeof(int)*lmodes);
+    double E[] = {0,0};
+    double Vab = 300;
+    int size_q = 2;
+    int q[] = {2, 5};// quantum numbers
 
-    for (int i=0; i<lmodes; i++){
-        w1[i] = sqrt((pow(w_sym, 2) + pow(w_asym, 2))/2);
-        w2[i] = sqrt((pow(w_sym, 2) - pow(w_asym, 2))/2);
-        b1[i] = (b_sym[i] + b_asym[i])/2;
-        b2[i] = (b_sym[i] - b_asym[i])/2;
-    }
-   
     // Memory for sparse Hamiltonian matrix 
     int *I, *J;
     double *VALUES;
     int numStates = get_prod(q, size_q); 
     printf("Number of states: %d\n", numStates);
-    int numElems = numStates*4;
+    int numElems = 2*numStates + nIntra[0]*2*numStates + nInter*numStates*4;
     I = (int *)malloc(sizeof(int)*numElems);
     J = (int *)malloc(sizeof(int)*numElems);
     VALUES = (double *)malloc(sizeof(double)*numElems);
     
     // Compute Hamiltonian
     int elems;
-    SparseHamiltonian(nmodes, q, size_q, w, b, E, Vab, I, J, VALUES, numStates, &elems, w1, w2, b1, b2, lmodes);
+    SparseHamiltonian(nIntra, nInter, wIntra, bIntra, wInter, bInter, q, size_q, E, Vab, I, J, VALUES, numStates, &elems);
     
     // Expand to matrix
     double **M = (double **)malloc(sizeof(double *)*numStates);

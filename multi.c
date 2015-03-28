@@ -78,47 +78,79 @@ int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], 
     }
     return 0;
 }
-int SparseHamiltonian( int nmodes[], int q[], int size_q, double w[], double b[], double E[], double Vab, int I[], int J[], double VALUES[], int numStates, int *elems, double w1[], double w2[], double b1[], double b2[], int lmodes){
+int SparseHamiltonian( int nIntra[], int nInter, double wIntra[], double bIntra[], double wInter[], double bInter[], int q[], int size_q, double E[], double Vab, int I[], int J[], double VALUES[], int numStates, int *elems){
+    int nUnits=2;
     
     int *q_base;
     q_base = (int *)malloc(sizeof(int)*size_q);
     get_q_base(q_base, q, size_q);
     
+    int *Istate, *Jstate;
+    Istate = (int *)malloc(sizeof(int)*size_q);
+    Jstate = (int *)malloc(sizeof(int)*size_q);
     // Initialize first state
-    int *state;
-    state = (int *)malloc(sizeof(int)*size_q);
-    for(int i=0; i<size_q; i++) state[i]=0;
-    int *stateCopy;
-    stateCopy = (int *)malloc(sizeof(int)*size_q);
+    for(int i=0; i<size_q; i++) Istate[i]=0;
+    
+    int totalIntra = 0;
+    for (int k=0; k < nUnits; k++) totalIntra += nIntra[k];
+    
+    // Convert inter
+    double *wPlus, *wMinus, *bPlus, *bMinus;
+    wPlus = (double *)malloc(sizeof(double)*nInter);
+    wMinus = (double *)malloc(sizeof(double)*nInter);
+    bPlus = (double *)malloc(sizeof(double)*nInter);
+    bMinus = (double *)malloc(sizeof(double)*nInter);
+    for (int i=0; i<nInter; i++){
+        wPlus[i] = wInter[2*i] + wInter[2*i+1];
+        wMinus[i] = wInter[2*i] - wInter[2*i+1];
+        bPlus[i] = bInter[2*i] + bInter[2*i+1];
+        bMinus[i] = bInter[2*i] - bInter[2*i+1];
+    }
 
-    int Ij;
+    int Iindex;
     int start;
-    for (int istate=0; istate<numStates; istate++){
-        Ij = pack_to_index(state, q_base, size_q);
-        // diagonal
-        VALUES[*elems] = E[*state] + Energy(state, w, 1, nmodes[0]+nmodes[1]) + Energy(state, w1, 1+nmodes[0]+nmodes[1], lmodes);
-        I[*elems] = Ij;
-        J[*elems] = Ij;
-        ++*elems;
-        
-        // coupling
-        for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
-        stateCopy[0] = 1 - *state;
-        VALUES[*elems] = Vab + Energy(state, w2, 1+nmodes[0]+nmodes[1], lmodes);
-        I[*elems] = Ij;
-        J[*elems] = pack_to_index(stateCopy, q_base, size_q);
-        ++*elems;
-        
-        // subdiagonal
-        start = 1;
-        for (int i=0; i < *state; i++) start += nmodes[i];
-        ladder(state, w, b, start, nmodes[*state], I, J, VALUES, size_q, Ij, q_base, elems, q);
+    for (int i=0; i<numStates; i++){
+        Iindex = pack_to_index(Istate, q_base, size_q);
+        for (int u=0; u<nUnits; u++){
+            if (u == *Istate){ // diagonal block
+                // diagonal
+                VALUES[*elems] = E[*Istate] + Energy(Istate, wIntra, 1, totalIntra) + Energy(Istate, wPlus, 1+totalIntra, nInter);
+                I[*elems] = Iindex;
+                J[*elems] = Iindex;
+                ++*elems;
 
-        increase(state, q, size_q);
+                // subdiagonal
+                // INTRA
+                start = 1;
+                for (int k=0; k < *Istate; k++) start += nIntra[k];
+                ladder(Istate, wIntra, bIntra, start, nIntra[*Istate], I, J, VALUES, size_q, Iindex, q_base, elems, q);
+                // INTER
+                ladder(Istate, wPlus, bPlus, 1+totalIntra, nInter, I, J, VALUES, size_q, Iindex, q_base, elems, q);
+            }
+            else{ // coupling block
+                for (int j=0; j<size_q; j++) Jstate[j] = Istate[j];
+                *Jstate = u;
+
+                // Vab constant + INTER 
+                VALUES[*elems] = Vab + Energy(Istate, wMinus, 1+totalIntra, nInter);
+                I[*elems] = Iindex;
+                J[*elems] = pack_to_index(Jstate, q_base, size_q);
+                ++*elems;
+                
+                // INTER only
+                ladder(Jstate, wMinus, bMinus, 1+totalIntra, nInter, I, J, VALUES, size_q, Iindex, q_base, elems, q);
+            }
+        }
+
+        increase(Istate, q, size_q);
 
     }
     free(q_base);
-    free(stateCopy);
-    free(state);
+    free(Istate);
+    free(Jstate);
+    free(wPlus);
+    free(wMinus);
+    free(bPlus);
+    free(bMinus);
     return 0;
 } 
