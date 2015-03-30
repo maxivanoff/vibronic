@@ -51,26 +51,24 @@ double Energy(int state[], double w[], int start, int nmodes){
     }
     return E;
 }
-int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], int J[], double VALUES[], int size_q, int Ij, int q_base[], int *elems, int q[]){
+int ladder(int state[], double bw[], int start, int nmodes, int I[], int J[], double VALUES[], int size_q, int Ij, int q_base[], int *elems, int q[]){
     int pos;
     int *stateCopy;
     stateCopy = (int *)malloc(sizeof(int)*size_q);
     for (int imode=0; imode<nmodes; imode++){
         pos = start + imode;
-
         // n' = n - 1
         for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
         if (stateCopy[pos]-- > 0) {
-            VALUES[*elems] = b[imode] * w[imode] * sqrt(state[pos]);
+            VALUES[*elems] = bw[imode] * sqrt(state[pos]);
             I[*elems] = Ij;
             J[*elems] = pack_to_index(stateCopy, q_base, size_q);
             ++*elems;
         }
-
         // n' = n + 1
         for (int j=0; j<size_q; j++) stateCopy[j] = state[j];
         if (stateCopy[pos]++ < q[pos]-1) {
-            VALUES[*elems] = b[imode] * w[imode] * sqrt(state[pos]+1);
+            VALUES[*elems] = bw[imode] * sqrt(state[pos]+1);
             I[*elems] = Ij;
             J[*elems] = pack_to_index(stateCopy, q_base, size_q);
             ++*elems;
@@ -78,7 +76,7 @@ int ladder(int state[], double w[], double b[], int start, int nmodes, int I[], 
     }
     return 0;
 }
-int SparseHamiltonian( int nIntra[], int nInter, double wIntra[], double bIntra[], double wInter[], double bInter[], int q[], int size_q, double E[], double Vab, int I[], int J[], double VALUES[], int numStates, int *elems){
+int SparseHamiltonian( int nIntra, int nInter, double wIntra[], double bIntra[], double wInter[], double bInter[], int q[], int size_q, double E[], double Vab, int I[], int J[], double VALUES[], int numStates, int *elems){
     int nUnits=2;
     
     int *q_base;
@@ -90,21 +88,22 @@ int SparseHamiltonian( int nIntra[], int nInter, double wIntra[], double bIntra[
     Jstate = (int *)malloc(sizeof(int)*size_q);
     // Initialize first state
     for(int i=0; i<size_q; i++) Istate[i]=0;
-    
-    int totalIntra = 0;
-    for (int k=0; k < nUnits; k++) totalIntra += nIntra[k];
+
+    double *bwIntra;
+    bwIntra = (double *)malloc(sizeof(double) * 2 * nIntra);
+    for (int i=0; i < nIntra; i++) bwIntra[i] = bIntra[i]*wIntra[i]; 
     
     // Convert inter
-    double *wPlus, *wMinus, *bPlus, *bMinus;
-    wPlus = (double *)malloc(sizeof(double)*nInter);
-    wMinus = (double *)malloc(sizeof(double)*nInter);
-    bPlus = (double *)malloc(sizeof(double)*nInter);
-    bMinus = (double *)malloc(sizeof(double)*nInter);
+    double *wPlus, *wMinus, *bwPlus, *bwMinus;
+    wPlus = (double *)malloc(sizeof(double) * nInter);
+    wMinus = (double *)malloc(sizeof(double) * nInter);
+    bwPlus = (double *)malloc(sizeof(double) * nInter);
+    bwMinus = (double *)malloc(sizeof(double) * nInter);
     for (int i=0; i<nInter; i++){
-        wPlus[i] = wInter[2*i] + wInter[2*i+1];
-        wMinus[i] = wInter[2*i] - wInter[2*i+1];
-        bPlus[i] = bInter[2*i] + bInter[2*i+1];
-        bMinus[i] = bInter[2*i] - bInter[2*i+1];
+        wPlus[i] = (wInter[2 * i] + wInter[2 * i + 1]) * 0.5;
+        wMinus[i] = (wInter[2 * i] - wInter[2 * i + 1]) * 0.5;
+        bwPlus[i] = (bInter[2 * i] * wInter[2 * i] + bInter[2 * i + 1] * wInter[2 * i + 1]) * 0.5;
+        bwMinus[i] = (bInter[2 * i] * wInter[2 * i] - bInter[2 * i + 1] * wInter[2 * i + 1]) * 0.5;
     }
 
     int Iindex;
@@ -114,31 +113,30 @@ int SparseHamiltonian( int nIntra[], int nInter, double wIntra[], double bIntra[
         for (int u=0; u<nUnits; u++){
             if (u == *Istate){ // diagonal block
                 // diagonal
-                VALUES[*elems] = E[*Istate] + Energy(Istate, wIntra, 1, totalIntra) + Energy(Istate, wPlus, 1+totalIntra, nInter);
+                VALUES[*elems] = E[u] + Energy(Istate, wIntra, 1, nIntra) + Energy(Istate, wIntra, 1 + nIntra, nIntra) + Energy(Istate, wPlus, 1 + 2 * nIntra, nInter);
                 I[*elems] = Iindex;
                 J[*elems] = Iindex;
                 ++*elems;
 
                 // subdiagonal
                 // INTRA
-                start = 1;
-                for (int k=0; k < *Istate; k++) start += nIntra[k];
-                ladder(Istate, wIntra, bIntra, start, nIntra[*Istate], I, J, VALUES, size_q, Iindex, q_base, elems, q);
+                start = 1 + u * nIntra;
+                ladder(Istate, bwIntra, start, nIntra, I, J, VALUES, size_q, Iindex, q_base, elems, q);
                 // INTER
-                ladder(Istate, wPlus, bPlus, 1+totalIntra, nInter, I, J, VALUES, size_q, Iindex, q_base, elems, q);
+                ladder(Istate, bwPlus, 1 + 2 * nIntra, nInter, I, J, VALUES, size_q, Iindex, q_base, elems, q);
             }
             else{ // coupling block
                 for (int j=0; j<size_q; j++) Jstate[j] = Istate[j];
                 *Jstate = u;
 
                 // Vab constant + INTER 
-                VALUES[*elems] = Vab + Energy(Istate, wMinus, 1+totalIntra, nInter);
+                VALUES[*elems] = Vab + Energy(Istate, wMinus, 1 + 2 * nIntra, nInter);
                 I[*elems] = Iindex;
                 J[*elems] = pack_to_index(Jstate, q_base, size_q);
                 ++*elems;
                 
                 // INTER only
-                ladder(Jstate, wMinus, bMinus, 1+totalIntra, nInter, I, J, VALUES, size_q, Iindex, q_base, elems, q);
+                ladder(Jstate, bwMinus, 1 + 2 * nIntra, nInter, I, J, VALUES, size_q, Iindex, q_base, elems, q);
             }
         }
 
@@ -150,7 +148,7 @@ int SparseHamiltonian( int nIntra[], int nInter, double wIntra[], double bIntra[
     free(Jstate);
     free(wPlus);
     free(wMinus);
-    free(bPlus);
-    free(bMinus);
+    free(bwPlus);
+    free(bwMinus);
     return 0;
 } 

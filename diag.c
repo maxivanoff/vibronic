@@ -9,14 +9,14 @@ int main(int argc,char **argv)
 {
     SlepcInitialize(&argc,&argv,(char*)0,NULL);
     double Msym = 1, Masym = 1;
-    int nIntra[] = {0,0};
+    int nIntra = 0;
     // intra modes
-    double wIntra[] = {0, 0};//frequencies
-    double bIntra[] = {0, 0};//shifts
+    double wIntra[] = {0};//frequencies
+    double bIntra[] = {0};//shifts
     // inter modes
     int nInter = 1;
-    double wInter[] = {100,100}; // mode 1 sym asym; mode 2 sym asym ...
-    double bInter[] = {0.8,0.8};
+    double wInter[] = {80, 150}; // mode 1 sym asym; mode 2 sym asym ...
+    double bInter[] = {0.8, 0.8};
 
     double E[] = {0,0};
     double Vab = 300;
@@ -28,7 +28,7 @@ int main(int argc,char **argv)
     double *VALUES;
     int numStates = get_prod(q, size_q); 
     printf("Number of states: %d\n", numStates);
-    int numElems = 2*numStates + nIntra[0]*2*numStates + nInter*numStates*4;
+    int numElems = 2*numStates + nIntra*2*numStates + nInter*numStates*4;
     I = (int *)malloc(sizeof(int)*numElems);
     J = (int *)malloc(sizeof(int)*numElems);
     VALUES = (double *)malloc(sizeof(double)*numElems);
