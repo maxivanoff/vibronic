@@ -9,9 +9,9 @@ diag: diag.o chkopts
 	-${CLINKER} -std=c99 -o diag diag.o multi.o ${SLEPC_EPS_LIB} 
 
 
-main: main.o 
+main: main.o chkopts
 	gcc -std=c99 -c  multi.c main.c
-	gcc -std=c99 -o main main.o  multi.o
+	-${CLINKER} -std=c99 -o main main.o  multi.o
 	rm *.o
 
 

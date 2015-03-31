@@ -1,39 +1,49 @@
+#include <time.h>
 #include "multi.h"
 #include <math.h>
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
+#undef __FUNCT__
+#define __FUNCT__ "main"
 int main(){
    
-    int nIntra[] = {0,0};
+    int nIntra = 0;
     // intra modes
-    double wIntra[] = {0, 0};//frequencies
-    double bIntra[] = {0, 0};//shifts
+    double wIntra[] = {0,0};//frequencies
+    double bIntra[] = {0,0};//shifts
     // inter modes
     int nInter = 1;
-    double wInter[] = {100,100}; // mode 1 sym asym; mode 2 sym asym ...
-    double bInter[] = {0.8,0.8};
+    double wInter[] = {100, 100}; // mode 1 sym asym; mode 2 sym asym ...
+    double bInter[] = {0.8, 0.8};
 
     double E[] = {0,0};
     double Vab = 300;
     int size_q = 2;
-    int q[] = {2, 5};// quantum numbers
+    int q[] = {2, 10};// quantum numbers
 
     // Memory for sparse Hamiltonian matrix 
     int *I, *J;
     double *VALUES;
     int numStates = get_prod(q, size_q); 
     printf("Number of states: %d\n", numStates);
-    int numElems = 2*numStates + nIntra[0]*2*numStates + nInter*numStates*4;
+    int numElems = 2*numStates + nIntra*2*numStates + nInter*numStates*4;
     I = (int *)malloc(sizeof(int)*numElems);
     J = (int *)malloc(sizeof(int)*numElems);
     VALUES = (double *)malloc(sizeof(double)*numElems);
-    
-    // Compute Hamiltonian
-    int elems;
+
+    // Compute Hamiltonian elements
+    int elems=0;
+    clock_t start = clock(), diff;
+    int sec;
     SparseHamiltonian(nIntra, nInter, wIntra, bIntra, wInter, bInter, q, size_q, E, Vab, I, J, VALUES, numStates, &elems);
+    diff = clock() - start;
+    sec = diff / CLOCKS_PER_SEC;
+    printf("Sparse Hamiltonian computation time: %d seconds %d milliseconds\n", sec, sec/1000);
     
+    printf("filling in zeros\n");
     // Expand to matrix
     double **M = (double **)malloc(sizeof(double *)*numStates);
     for (int i=0; i < numStates; i++) M[i] = (double *)malloc(sizeof(double)*numStates);
@@ -44,7 +54,7 @@ int main(){
     }
     
     for (int i=0; i < elems; i++) M[I[i]][J[i]] = VALUES[i];
-    
+    printf("printing\n");    
     // print matrix
     for(int i=0; i < numStates; i++) {
           for(int j=0; j < numStates; j++) printf("%3f ",M[i][j]);
@@ -55,5 +65,5 @@ int main(){
     free(J);
     free(VALUES);
     free(M);
- 
+    return 0; 
 }

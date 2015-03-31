@@ -11,17 +11,17 @@ int main(int argc,char **argv)
     double Msym = 1, Masym = 1;
     int nIntra = 0;
     // intra modes
-    double wIntra[] = {0};//frequencies
-    double bIntra[] = {0};//shifts
+    double wIntra[] = {0,0};//frequencies
+    double bIntra[] = {0,0};//shifts
     // inter modes
     int nInter = 1;
-    double wInter[] = {80, 150}; // mode 1 sym asym; mode 2 sym asym ...
+    double wInter[] = {150, 250}; // mode 1 sym asym; mode 2 sym asym ...
     double bInter[] = {0.8, 0.8};
 
     double E[] = {0,0};
     double Vab = 300;
     int size_q = 2;
-    int q[] = {2, 5};// quantum numbers
+    int q[] = {2, 10};// quantum numbers
 
     // Memory for sparse Hamiltonian matrix 
     int *I, *J;
@@ -34,13 +34,14 @@ int main(int argc,char **argv)
     VALUES = (double *)malloc(sizeof(double)*numElems);
 
     // Compute Hamiltonian elements
-    int elems;
+    int elems=0;
     clock_t start = clock(), diff;
     int sec;
     SparseHamiltonian(nIntra, nInter, wIntra, bIntra, wInter, bInter, q, size_q, E, Vab, I, J, VALUES, numStates, &elems);
     diff = clock() - start;
     sec = diff / CLOCKS_PER_SEC;
     printf("Sparse Hamiltonian computation time: %d seconds %d milliseconds\n", sec, sec/1000);
+    
 
     // Define matrix
     start = clock();
