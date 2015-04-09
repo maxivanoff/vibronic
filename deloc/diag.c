@@ -9,26 +9,22 @@ int main(int argc,char **argv)
 {
     SlepcInitialize(&argc,&argv,(char*)0,NULL);
     double Msym = 1, Masym = 1;
-    int nIntra = 0;
-    // intra modes
-    double wIntra[] = {0,0};//frequencies
-    double bIntra[] = {0,0};//shifts
+    
     // inter modes
     int nInter = 1;
-    double wInter[] = {100, 100}; // mode 1 sym asym; mode 2 sym asym ...
+    double wInter[] = {100, 200}; // mode 1 sym asym; mode 2 sym asym ...
     double bInter[] = {0.8, 0.8};
 
-    double E[] = {0,0};
-    double Vab = 300;
+    double E[] = {300,-300};
     int size_q = 2;
-    int q[] = {2, 100};// quantum numbers
+    int q[] = {2, 15};// quantum numbers
 
     // Memory for sparse Hamiltonian matrix 
     int *I, *J;
     double *VALUES;
     int numStates = get_prod(q, size_q); 
     printf("Number of states: %d\n", numStates);
-    int numElems = 2*numStates + nIntra*2*numStates + nInter*numStates*4;
+    int numElems = 2*numStates + nInter*numStates*4;
     I = (int *)malloc(sizeof(int)*numElems);
     J = (int *)malloc(sizeof(int)*numElems);
     VALUES = (double *)malloc(sizeof(double)*numElems);
@@ -37,11 +33,28 @@ int main(int argc,char **argv)
     int elems=0;
     clock_t start = clock(), diff;
     int sec;
-    SparseHamiltonian(nIntra, nInter, wIntra, bIntra, wInter, bInter, q, size_q, E, Vab, I, J, VALUES, numStates, &elems);
+    SparseHamiltonian(nInter, wInter, bInter, q, size_q, E, I, J, VALUES, numStates, &elems);
     diff = clock() - start;
     sec = diff / CLOCKS_PER_SEC;
     printf("Sparse Hamiltonian computation time: %d seconds %d milliseconds\n", sec, sec/1000);
-    
+    /*
+    printf("filling in zeros\n");
+    // Expand to matrix
+    double **M = (double **)malloc(sizeof(double *)*numStates);
+    for (int i=0; i < numStates; i++) M[i] = (double *)malloc(sizeof(double)*numStates);
+    for(int i=0; i < numStates; i++) {
+          for(int j=0; j < numStates; j++) {
+                   M[i][j] = 0;
+                     }
+    }
+        
+    for (int i=0; i < elems; i++) M[I[i]][J[i]] = VALUES[i];
+    printf("printing\n");    
+    // print matrix
+    for(int i=0; i < numStates; i++) {
+          for(int j=0; j < numStates; j++) printf("%3f ",M[i][j]);
+          printf("\n");
+    }*/
 
     // Define matrix
     start = clock();
@@ -92,18 +105,24 @@ int main(int argc,char **argv)
     double Isym, Iasym;
 
     VecCreateSeq(PETSC_COMM_SELF, numStates, &Vr);
-    printf("Vab = %f\n", Vab);
-    printf("w = %f\n", wIntra[0]);
-    printf("b = %f\n", bIntra[0]);
 
     ierr = EPSGetDimensions(eps,&nev,NULL,NULL);CHKERRQ(ierr);
+    printf("Vab = %f\n", E[0]);
+    printf("w+ = %f\n", wInter[0]);
+    printf("w- = %f\n", wInter[1]);
+    printf("b+ = %f\n", bInter[0]);
+    printf("b- = %f\n", bInter[1]);
     printf("E    Isym    Iasym\n");
     for (int i=0; i<nev; i++){
         ierr = EPSGetEigenvalue(eps, i, (PetscScalar*)&levels, PETSC_NULL);CHKERRQ(ierr); 
         ierr = EPSGetEigenvector(eps, i, Vr, PETSC_NULL);CHKERRQ(ierr);
         VecGetArray(Vr, &xx);
-        Isym = Msym*pow(xx[0] + xx[numStates/2], 2)/2;
-        Iasym = Masym*pow(xx[0] - xx[numStates/2], 2)/2;
+        /*printf("Eigenvector %d; eigenvalue = %f\n", i, levels);
+        for(int j=0; j<numStates; j++){
+            printf("%f\n", xx[j]);
+        }*/
+        Isym = Msym*pow(xx[0], 2);
+        Iasym = Masym*pow(xx[numStates/2], 2);
         printf("%f %f %f\n", levels, Isym, Iasym);
     }
 
@@ -111,6 +130,7 @@ int main(int argc,char **argv)
     free(I);
     free(J);
     free(VALUES);
+    //free(M);
     ierr = EPSDestroy(&eps);CHKERRQ(ierr);
     ierr = VecDestroy(&Vr);CHKERRQ(ierr);
     ierr = MatDestroy(&A);CHKERRQ(ierr);

@@ -1,0 +1,16 @@
+Number of states: 8
+Sparse Hamiltonian computation time: 0 seconds 0 milliseconds
+Time to set up matrix: 0 seconds 0 milliseconds
+Diagonalization time: 0 seconds 0 milliseconds
+Vab = 400.000000
+w = 100.000000
+b = 0.000000
+E    Isym    Iasym
+-300.000000 0.000000 1.000000
+-200.000000 0.000000 0.000000
+-200.000000 0.000000 0.000000
+-100.000000 0.000000 0.000000
+500.000000 1.000000 0.000000
+600.000000 0.000000 0.000000
+600.000000 0.000000 0.000000
+700.000000 0.000000 0.000000

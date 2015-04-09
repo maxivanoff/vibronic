@@ -10,14 +10,10 @@
 #define __FUNCT__ "main"
 int main(){
    
-    int nIntra = 0;
-    // intra modes
-    double wIntra[] = {0,0};//frequencies
-    double bIntra[] = {0,0};//shifts
     // inter modes
     int nInter = 1;
     double wInter[] = {150, 250}; // mode 1 sym asym; mode 2 sym asym ...
-    double bInter[] = {0.0, 0.0};
+    double bInter[] = {1.0, 1.0};
 
     double E[] = {0,0};
     double Vab = 300;
@@ -29,7 +25,7 @@ int main(){
     double *VALUES;
     int numStates = get_prod(q, size_q); 
     printf("Number of states: %d\n", numStates);
-    int numElems = 2*numStates + nIntra*2*numStates + nInter*numStates*4;
+    int numElems = 2*numStates + nInter*numStates*4;
     I = (int *)malloc(sizeof(int)*numElems);
     J = (int *)malloc(sizeof(int)*numElems);
     VALUES = (double *)malloc(sizeof(double)*numElems);
@@ -38,7 +34,7 @@ int main(){
     int elems=0;
     clock_t start = clock(), diff;
     int sec;
-    SparseHamiltonian(nIntra, nInter, wIntra, bIntra, wInter, bInter, q, size_q, E, Vab, I, J, VALUES, numStates, &elems);
+    SparseHamiltonian(nInter, wInter, bInter, q, size_q, E, Vab, I, J, VALUES, numStates, &elems);
     diff = clock() - start;
     sec = diff / CLOCKS_PER_SEC;
     printf("Sparse Hamiltonian computation time: %d seconds %d milliseconds\n", sec, sec/1000);
